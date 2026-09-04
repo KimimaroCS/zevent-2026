@@ -218,14 +218,11 @@ function applySound({ userGesture = false } = {}) {
     const isOn = soundUnlocked && state.sound === login;
     const mount = entry.card.querySelector(".twitch-mount");
     const iframe = mount.querySelector("iframe");
-    const wantMuted = !isOn;
 
     if (isOn && userGesture) {
       mountPlayer(mount, login, false);
-    } else if (iframe && iframeIsMuted(iframe) !== wantMuted) {
-      mountPlayer(mount, login, wantMuted);
-    } else if (!iframe) {
-      mountPlayer(mount, login, wantMuted);
+    } else if (!isOn && (!iframe || !iframeIsMuted(iframe))) {
+      mountPlayer(mount, login, true);
     }
 
     const soundBtn = entry.card.querySelector(".sound");

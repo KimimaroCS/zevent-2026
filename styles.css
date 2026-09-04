@@ -253,22 +253,22 @@ body.has-chat .grid {
 
 .player {
   position: relative;
+  display: flex;
+  flex-direction: column;
   background: #000;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   overflow: hidden;
-  min-height: 240px;
-  aspect-ratio: 16 / 9;
-}
-
-.grid[data-layout="theater"] .player:not(.theater) {
-  aspect-ratio: 16 / 9;
   min-height: 0;
 }
 
-.player iframe,
-.twitch-mount,
+.grid[data-layout="theater"] .player:not(.theater) {
+  min-height: 0;
+}
+
 .twitch-mount iframe {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   border: 0;
@@ -276,34 +276,29 @@ body.has-chat .grid {
 }
 
 .twitch-mount {
-  position: absolute;
-  inset: 0;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  min-height: 0;
+}
+
+.grid[data-layout="theater"] .player.theater .twitch-mount {
+  aspect-ratio: auto;
+  flex: 1;
+  min-height: min(58vh, 740px);
 }
 
 .player-bar {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
+  position: relative;
   z-index: 2;
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: 8px;
   padding: 8px 10px;
-  background: linear-gradient(rgba(0, 0, 0, 0.82), transparent);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.18s ease;
-}
-
-.player-bar .player-actions,
-.player-bar .mini {
-  pointer-events: auto;
-}
-
-.player:hover .player-bar,
-.player:focus-within .player-bar {
-  opacity: 1;
+  background: #0c0c0c;
+  border-top: 1px solid var(--line);
 }
 
 .player-name {
