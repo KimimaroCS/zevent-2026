@@ -132,8 +132,12 @@ function clearTheater() {
 }
 
 function setSound(login) {
-  state.sound = login;
-  soundUnlocked = true;
+  if (soundUnlocked && state.sound === login) {
+    soundUnlocked = false;
+  } else {
+    state.sound = login;
+    soundUnlocked = true;
+  }
   saveState();
   applySound({ userGesture: true });
   updateChrome();
