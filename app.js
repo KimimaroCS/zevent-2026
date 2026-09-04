@@ -2,7 +2,7 @@ const STORAGE_KEY = "zevent-multiview-v2";
 const CHAT_MIN = 300;
 const CHAT_MAX = 640;
 const LIVE_POLL_MS = 60000;
-const MAX_AUTO_ADD = 8;
+const MAX_AUTO_ADD_DESKTOP = 8;
 const TWITCH_GQL = "https://gql.twitch.tv/gql";
 const TWITCH_WEB_CLIENT = "kimne78kx3ncx6brgo4mv6wki5h1ko";
 
@@ -32,6 +32,20 @@ const liveByLogin = new Map();
 const state = loadState();
 let catalogLiveOnly = false;
 let liveFetchOk = true;
+
+function isPhone() {
+  return window.matchMedia("(max-width: 720px)").matches;
+}
+
+function isCompact() {
+  return window.matchMedia("(max-width: 1180px)").matches;
+}
+
+function maxAutoAdd() {
+  if (isPhone()) return 2;
+  if (isCompact() || window.matchMedia("(pointer: coarse)").matches) return 4;
+  return MAX_AUTO_ADD_DESKTOP;
+}
 
 function parentHosts() {
   const host = window.location.hostname || "localhost";
@@ -160,7 +174,7 @@ async function refreshLiveStatus() {
 }
 
 function addTopLives() {
-  const room = Math.max(0, MAX_AUTO_ADD - state.channels.length);
+  const room = Math.max(0, maxAutoAdd() - state.channels.length);
   if (!room) return;
   let added = 0;
   for (const login of liveLogins()) {
@@ -251,7 +265,9 @@ function closeChatTab(login) {
 
 function visibleChats() {
   if (!state.chats.length) return [];
-  if (!state.chatSplit || state.chats.length < 2) return [state.chatActive || state.chats[0]];
+  if (isPhone() || !state.chatSplit || state.chats.length < 2) {
+    return [state.chatActive || state.chats[0]];
+  }
   const primary = state.chatActive || state.chats[0];
   const second = state.chats.find((c) => c !== primary) || state.chats[0];
   return [primary, second];
@@ -264,6 +280,11 @@ function applyChatWidth() {
 }
 
 function positionChatDock() {
+  if (!chatPanel) return;
+  if (isCompact()) {
+    chatPanel.style.top = "";
+    return;
+  }
   if (!topbar) return;
   let top = topbar.getBoundingClientRect().bottom;
   if (catalog && !catalog.hidden) top = catalog.getBoundingClientRect().bottom;
@@ -288,14 +309,22 @@ function iframeIsMuted(iframe) {
   }
 }
 
+function configureIframe(iframe, title) {
+  iframe.setAttribute("allow", "autoplay; fullscreen; picture-in-picture; encrypted-media; playsinline");
+  iframe.allow = "autoplay; fullscreen; picture-in-picture; encrypted-media; playsinline";
+  iframe.allowFullscreen = true;
+  iframe.setAttribute("allowfullscreen", "true");
+  iframe.setAttribute("webkitallowfullscreen", "true");
+  iframe.setAttribute("playsinline", "true");
+  iframe.setAttribute("webkit-playsinline", "true");
+  iframe.referrerPolicy = "strict-origin-when-cross-origin";
+  iframe.title = title;
+}
+
 function mountPlayer(mount, login, muted) {
   mount.replaceChildren();
   const iframe = document.createElement("iframe");
-  iframe.setAttribute("allow", "autoplay; fullscreen; picture-in-picture; encrypted-media");
-  iframe.allow = "autoplay; fullscreen; picture-in-picture; encrypted-media";
-  iframe.allowFullscreen = true;
-  iframe.referrerPolicy = "strict-origin-when-cross-origin";
-  iframe.title = `Stream ${displayName(login)}`;
+  configureIframe(iframe, `Stream ${displayName(login)}`);
   mount.appendChild(iframe);
   iframe.src = playerSrc(login, muted);
   return iframe;
@@ -441,10 +470,10 @@ function renderCatalog() {
     filterLive.textContent = liveByLogin.size ? `En live (${liveCount})` : "En live";
   }
   if (addLivesBtn) {
-    const room = Math.max(0, MAX_AUTO_ADD - state.channels.length);
+    const cap = maxAutoAdd();
+    const room = Math.max(0, cap - state.channels.length);
     addLivesBtn.disabled = !liveCount || room === 0;
-    addLivesBtn.textContent =
-      room === 0 ? `Grille pleine (${MAX_AUTO_ADD})` : "Ajouter les plus gros";
+    addLivesBtn.textContent = room === 0 ? `Grille pleine (${cap})` : "Ajouter les plus gros";
   }
 
   const rows = ZEVENT_STREAMERS.filter((s) => {
@@ -514,7 +543,7 @@ function updateChrome() {
 
   if (open) {
     const shown = visibleChats();
-    chatSplitBtn.hidden = state.chats.length < 2;
+    chatSplitBtn.hidden = isPhone() || state.chats.length < 2;
     chatSplitBtn.textContent = state.chatSplit ? "1 chat" : "2 chats";
     chatSplitBtn.classList.toggle("on", state.chatSplit);
     chatBodies.classList.toggle("split", shown.length > 1);
@@ -553,7 +582,7 @@ function updateChrome() {
         pane.className = "chat-pane";
         pane.dataset.channel = login;
         const frame = document.createElement("iframe");
-        frame.title = `Chat ${displayName(login)}`;
+        configureIframe(frame, `Chat ${displayName(login)}`);
         frame.src = chatSrc(login);
         pane.appendChild(frame);
         chatBodies.appendChild(pane);
@@ -624,6 +653,10 @@ chatResize.addEventListener("pointerdown", (e) => {
 });
 
 window.addEventListener("resize", positionChatDock);
+window.addEventListener("orientationchange", () => {
+  requestAnimationFrame(positionChatDock);
+});
+window.visualViewport?.addEventListener("resize", positionChatDock);
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {

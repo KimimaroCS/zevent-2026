@@ -14,10 +14,15 @@
   --radius: 12px;
   --topbar: 84px;
   --chat-width: 380px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
 }
 
 * {
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html,
@@ -26,11 +31,18 @@ body {
   min-height: 100%;
   background: var(--bg);
   color: var(--text);
-  font-family: Switzer, system-ui, sans-serif;
+  font-family: Switzer, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+html {
+  overflow-x: hidden;
 }
 
 body {
-  min-height: 100vh;
+  min-height: 100dvh;
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
+  overflow-x: hidden;
   background:
     radial-gradient(900px 420px at 8% -10%, rgba(0, 189, 0, 0.16), transparent 55%),
     radial-gradient(700px 320px at 100% 0%, rgba(0, 189, 0, 0.08), transparent 50%),
@@ -68,10 +80,11 @@ body {
   gap: 16px;
   align-items: center;
   min-height: var(--topbar);
-  padding: 10px 16px;
+  padding: calc(10px + var(--safe-top)) 16px 10px;
   border-bottom: 1px solid var(--line);
   background: rgba(0, 0, 0, 0.86);
   backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   position: sticky;
   top: 0;
   z-index: 5;
@@ -119,6 +132,7 @@ body {
   border-radius: 999px;
   padding: 11px 16px;
   font: inherit;
+  font-size: 16px;
   outline: none;
 }
 
@@ -133,9 +147,11 @@ body {
   color: var(--text);
   border-radius: 999px;
   padding: 10px 16px;
-  font: 700 13px/1 Switzer, sans-serif;
+  font: 700 13px/1 Switzer, system-ui, sans-serif;
   cursor: pointer;
   white-space: nowrap;
+  min-height: 44px;
+  touch-action: manipulation;
 }
 
 .btn.primary,
@@ -221,6 +237,7 @@ body {
   max-height: min(38vh, 340px);
   overflow: auto;
   padding-bottom: 8px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .catalog-empty {
@@ -237,9 +254,11 @@ body {
   background: #101010;
   color: var(--text);
   border-radius: 999px;
-  padding: 7px 12px;
-  font: 650 12px/1 Switzer, sans-serif;
+  padding: 10px 12px;
+  min-height: 40px;
+  font: 650 12px/1 Switzer, system-ui, sans-serif;
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 .chip.live::before {
@@ -273,7 +292,7 @@ body {
 
 .stage {
   display: block;
-  min-height: calc(100vh - var(--topbar));
+  min-height: calc(100dvh - var(--topbar));
 }
 
 body.has-chat .grid {
@@ -362,6 +381,9 @@ body.has-chat .grid {
   font-weight: 800;
   font-size: 13px;
   text-shadow: 0 1px 8px #000;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .live-pill {
@@ -382,11 +404,13 @@ body.has-chat .grid {
 .mini {
   border: 0;
   border-radius: 999px;
-  padding: 6px 10px;
+  padding: 8px 12px;
+  min-height: 36px;
   background: rgba(255, 255, 255, 0.12);
   color: #fff;
-  font: 700 11px/1 Switzer, sans-serif;
+  font: 700 12px/1 Switzer, system-ui, sans-serif;
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 .mini.sound.on,
@@ -447,6 +471,7 @@ body.has-chat .grid {
   flex: 1;
   min-width: 0;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .chat-tab {
@@ -458,8 +483,9 @@ body.has-chat .grid {
   background: #151515;
   color: var(--text);
   border-radius: 999px;
-  padding: 5px 6px 5px 10px;
-  font: 700 12px/1 Switzer, sans-serif;
+  padding: 8px 8px 8px 12px;
+  min-height: 36px;
+  font: 700 12px/1 Switzer, system-ui, sans-serif;
   cursor: pointer;
   white-space: nowrap;
 }
@@ -526,19 +552,20 @@ body.has-chat .grid {
 }
 
 .icon-btn {
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
   border: 0;
   border-radius: 8px;
   background: transparent;
   color: var(--text);
   font-size: 22px;
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 .hint {
   margin: 0;
-  padding: 0 18px 16px;
+  padding: 0 18px calc(16px + var(--safe-bottom));
   color: var(--muted);
   font-size: 13px;
 }
@@ -547,29 +574,72 @@ body.has-streams .hint {
   display: none;
 }
 
-@media (max-width: 980px) {
+@media (max-width: 1180px) {
   .topbar {
     grid-template-columns: 1fr;
+    gap: 10px;
   }
 
   .add-form,
   .top-actions,
   .catalog-tools,
+  .catalog-head,
   .catalog-head input {
     width: 100%;
     max-width: none;
   }
 
+  .catalog-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .catalog-tools {
+    justify-content: stretch;
+  }
+
+  .top-actions {
+    flex-wrap: wrap;
+  }
+
   .brand-logo {
-    height: 52px;
+    height: 48px;
+  }
+
+  .grid[data-layout="grid"] {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  }
+
+  .grid[data-layout="theater"] {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .grid[data-layout="theater"] .player.theater {
+    min-height: 0;
+  }
+
+  .grid[data-layout="theater"] .player.theater .twitch-mount {
+    min-height: min(42vh, 520px);
+  }
+
+  .player-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .player-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
   }
 
   .chat-dock.is-open {
-    top: auto;
+    top: auto !important;
+    bottom: 0;
     left: 0;
     right: 0;
     width: 100% !important;
-    height: min(46vh, 420px);
+    height: calc(42dvh + var(--safe-bottom));
+    padding-bottom: var(--safe-bottom);
     border-left: 0;
     border-top: 1px solid var(--line);
   }
@@ -580,6 +650,48 @@ body.has-streams .hint {
 
   body.has-chat .grid {
     padding-right: 12px;
-    padding-bottom: min(46vh, 420px);
+    padding-bottom: calc(42dvh + var(--safe-bottom) + 8px);
+  }
+}
+
+@media (max-width: 720px) {
+  .brand-sub {
+    font-size: 11px;
+  }
+
+  .grid {
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .grid[data-layout="grid"],
+  .grid[data-layout="theater"] {
+    grid-template-columns: 1fr;
+  }
+
+  .grid[data-layout="theater"] .player.theater .twitch-mount {
+    min-height: min(52dvh, 420px);
+  }
+
+  .player-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .player-actions .mini {
+    flex: 1 1 auto;
+    text-align: center;
+  }
+
+  .chips {
+    max-height: min(46dvh, 280px);
+  }
+
+  .chat-dock.is-open {
+    height: calc(48dvh + var(--safe-bottom));
+  }
+
+  body.has-chat .grid {
+    padding-bottom: calc(48dvh + var(--safe-bottom) + 8px);
   }
 }
