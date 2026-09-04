@@ -120,7 +120,7 @@ function setTheater(login) {
   }
   saveState();
   syncPlayers();
-  if (state.theater) enableSoundFor(login);
+  applySound({ userGesture: Boolean(state.theater) });
   updateChrome();
 }
 
@@ -135,8 +135,7 @@ function setSound(login) {
   state.sound = login;
   soundUnlocked = true;
   saveState();
-  applySound();
-  enableSoundFor(login);
+  applySound({ userGesture: true });
   updateChrome();
 }
 
@@ -183,72 +182,52 @@ function positionChatDock() {
   chatPanel.style.top = `${Math.max(0, top)}px`;
 }
 
-function patchEmbedIframe(mount) {
-  const iframe = mount.querySelector("iframe");
-  if (!iframe) return;
-  iframe.setAttribute("allow", "autoplay; fullscreen; picture-in-picture");
-  iframe.allowFullscreen = true;
-}
-
-function syncPlayerMute(player, login) {
-  if (!player || typeof player.setMuted !== "function") return;
-  const muted = !soundUnlocked || state.sound !== login;
-  if (muted) {
-    player.setMuted(true);
-    if (typeof player.setVolume === "function") player.setVolume(0);
-    return;
-  }
-  if (typeof player.setVolume === "function") player.setVolume(1);
-}
-
-function attachTwitchPlayer(mount, login, muted) {
-  mount.innerHTML = "";
-  if (window.Twitch && window.Twitch.Player) {
-    const observer = new MutationObserver(() => patchEmbedIframe(mount));
-    observer.observe(mount, { childList: true, subtree: true });
-    const player = new Twitch.Player(mount.id, {
-      channel: login,
-      width: "100%",
-      height: "100%",
-      muted,
-      parent: parentHosts(),
-      autoplay: true,
-    });
-    const sync = () => {
-      syncPlayerMute(player, login);
-      patchEmbedIframe(mount);
-      observer.disconnect();
-    };
-    player.addEventListener(Twitch.Player.READY, sync);
-    return player;
-  }
-
-  const iframe = document.createElement("iframe");
+function playerSrc(login, muted) {
   const params = new URLSearchParams({
     channel: login,
     muted: muted ? "true" : "false",
     autoplay: "true",
   });
   parentHosts().forEach((p) => params.append("parent", p));
-  iframe.setAttribute("allow", "autoplay; fullscreen; picture-in-picture");
+  return `https://player.twitch.tv/?${params.toString()}`;
+}
+
+function iframeIsMuted(iframe) {
+  try {
+    return new URL(iframe.src).searchParams.get("muted") !== "false";
+  } catch {
+    return true;
+  }
+}
+
+function mountPlayer(mount, login, muted) {
+  mount.replaceChildren();
+  const iframe = document.createElement("iframe");
+  iframe.setAttribute("allow", "autoplay; fullscreen; picture-in-picture; encrypted-media");
+  iframe.allow = "autoplay; fullscreen; picture-in-picture; encrypted-media";
   iframe.allowFullscreen = true;
+  iframe.referrerPolicy = "strict-origin-when-cross-origin";
   iframe.title = `Stream ${displayName(login)}`;
-  iframe.src = `https://player.twitch.tv/?${params.toString()}`;
   mount.appendChild(iframe);
-  return null;
+  iframe.src = playerSrc(login, muted);
+  return iframe;
 }
 
-function enableSoundFor(login) {
-  const entry = players.get(login);
-  if (!entry) return;
-  const mount = entry.card.querySelector(".twitch-mount");
-  entry.player = attachTwitchPlayer(mount, login, false);
-}
-
-function applySound() {
+function applySound({ userGesture = false } = {}) {
   players.forEach((entry, login) => {
     const isOn = soundUnlocked && state.sound === login;
-    if (entry.player) syncPlayerMute(entry.player, login);
+    const mount = entry.card.querySelector(".twitch-mount");
+    const iframe = mount.querySelector("iframe");
+    const wantMuted = !isOn;
+
+    if (isOn && userGesture) {
+      mountPlayer(mount, login, false);
+    } else if (iframe && iframeIsMuted(iframe) !== wantMuted) {
+      mountPlayer(mount, login, wantMuted);
+    } else if (!iframe) {
+      mountPlayer(mount, login, wantMuted);
+    }
+
     const soundBtn = entry.card.querySelector(".sound");
     if (soundBtn) {
       soundBtn.classList.toggle("on", isOn);
@@ -303,8 +282,8 @@ function createPlayer(login) {
   card.append(mount, bar);
   grid.appendChild(card);
 
-  const player = attachTwitchPlayer(mount, login, true);
-  players.set(login, { card, player });
+  mountPlayer(mount, login, true);
+  players.set(login, { card });
 }
 
 function syncPlayers() {
@@ -484,5 +463,8 @@ function boot() {
   updateChrome();
 }
 
-if (window.Twitch && window.Twitch.Player) boot();
-else window.addEventListener("load", boot);
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", boot);
+} else {
+  boot();
+}
