@@ -21,7 +21,6 @@ const topbar = document.querySelector(".topbar");
 
 const players = new Map();
 const state = loadState();
-let soundUnlocked = false;
 
 function parentHosts() {
   const host = window.location.hostname || "localhost";
@@ -52,6 +51,7 @@ function loadState() {
           channels: parsed.channels,
           theater: parsed.theater || null,
           sound: parsed.sound || parsed.channels[0],
+          soundOn: false,
           chats: [],
           chatActive: parsed.channels[0],
           chatSplit: false,
@@ -67,6 +67,7 @@ function loadState() {
     channels: [...DEFAULT_CHANNELS],
     theater: null,
     sound: DEFAULT_CHANNELS[0],
+    soundOn: false,
     chats: [],
     chatActive: DEFAULT_CHANNELS[0],
     chatSplit: false,
@@ -116,11 +117,11 @@ function setTheater(login) {
   state.theater = state.theater === login ? null : login;
   if (state.theater) {
     state.sound = login;
-    soundUnlocked = true;
+    state.soundOn = true;
   }
   saveState();
   syncPlayers();
-  applySound({ userGesture: Boolean(state.theater) });
+  applySound({ userGesture: Boolean(state.theater), target: state.theater });
   updateChrome();
 }
 
@@ -132,14 +133,11 @@ function clearTheater() {
 }
 
 function setSound(login) {
-  if (soundUnlocked && state.sound === login) {
-    soundUnlocked = false;
-  } else {
-    state.sound = login;
-    soundUnlocked = true;
-  }
+  const turnOff = state.soundOn && state.sound === login;
+  state.sound = login;
+  state.soundOn = !turnOff;
   saveState();
-  applySound({ userGesture: true });
+  applySound({ userGesture: true, target: login });
   updateChrome();
 }
 
@@ -217,15 +215,16 @@ function mountPlayer(mount, login, muted) {
   return iframe;
 }
 
-function applySound({ userGesture = false } = {}) {
+function applySound({ userGesture = false, target = null } = {}) {
   players.forEach((entry, login) => {
-    const isOn = soundUnlocked && state.sound === login;
+    const isOn = Boolean(state.soundOn && state.sound === login);
     const mount = entry.card.querySelector(".twitch-mount");
     const iframe = mount.querySelector("iframe");
+    const alreadyMuted = !iframe || iframeIsMuted(iframe);
 
-    if (isOn && userGesture) {
-      mountPlayer(mount, login, false);
-    } else if (!isOn && (!iframe || !iframeIsMuted(iframe))) {
+    if (userGesture && login === target) {
+      mountPlayer(mount, login, !isOn);
+    } else if (!isOn && !alreadyMuted) {
       mountPlayer(mount, login, true);
     }
 
@@ -233,6 +232,7 @@ function applySound({ userGesture = false } = {}) {
     if (soundBtn) {
       soundBtn.classList.toggle("on", isOn);
       soundBtn.textContent = isOn ? "Son ON" : "Son";
+      soundBtn.setAttribute("aria-pressed", String(isOn));
     }
   });
 }
