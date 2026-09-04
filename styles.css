@@ -284,14 +284,21 @@ body.has-chat .grid {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 0;
+  top: 0;
+  z-index: 2;
   display: flex;
   justify-content: space-between;
   gap: 8px;
   padding: 8px 10px;
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.82));
+  background: linear-gradient(rgba(0, 0, 0, 0.82), transparent);
   opacity: 0;
+  pointer-events: none;
   transition: opacity 0.18s ease;
+}
+
+.player-bar .player-actions,
+.player-bar .mini {
+  pointer-events: auto;
 }
 
 .player:hover .player-bar,

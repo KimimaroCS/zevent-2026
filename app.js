@@ -21,6 +21,7 @@ const topbar = document.querySelector(".topbar");
 
 const players = new Map();
 const state = loadState();
+let soundUnlocked = false;
 
 function parentHosts() {
   const host = window.location.hostname || "localhost";
@@ -113,9 +114,13 @@ function removeChannel(login) {
 
 function setTheater(login) {
   state.theater = state.theater === login ? null : login;
-  if (state.theater) state.sound = login;
+  if (state.theater) {
+    state.sound = login;
+    soundUnlocked = true;
+  }
   saveState();
   syncPlayers();
+  if (state.theater) enableSoundFor(login);
   updateChrome();
 }
 
@@ -128,8 +133,10 @@ function clearTheater() {
 
 function setSound(login) {
   state.sound = login;
+  soundUnlocked = true;
   saveState();
   applySound();
+  enableSoundFor(login);
   updateChrome();
 }
 
@@ -176,15 +183,76 @@ function positionChatDock() {
   chatPanel.style.top = `${Math.max(0, top)}px`;
 }
 
+function patchEmbedIframe(mount) {
+  const iframe = mount.querySelector("iframe");
+  if (!iframe) return;
+  iframe.setAttribute("allow", "autoplay; fullscreen; picture-in-picture");
+  iframe.allowFullscreen = true;
+}
+
+function syncPlayerMute(player, login) {
+  if (!player || typeof player.setMuted !== "function") return;
+  const muted = !soundUnlocked || state.sound !== login;
+  if (muted) {
+    player.setMuted(true);
+    if (typeof player.setVolume === "function") player.setVolume(0);
+    return;
+  }
+  if (typeof player.setVolume === "function") player.setVolume(1);
+}
+
+function attachTwitchPlayer(mount, login, muted) {
+  mount.innerHTML = "";
+  if (window.Twitch && window.Twitch.Player) {
+    const observer = new MutationObserver(() => patchEmbedIframe(mount));
+    observer.observe(mount, { childList: true, subtree: true });
+    const player = new Twitch.Player(mount.id, {
+      channel: login,
+      width: "100%",
+      height: "100%",
+      muted,
+      parent: parentHosts(),
+      autoplay: true,
+    });
+    const sync = () => {
+      syncPlayerMute(player, login);
+      patchEmbedIframe(mount);
+      observer.disconnect();
+    };
+    player.addEventListener(Twitch.Player.READY, sync);
+    return player;
+  }
+
+  const iframe = document.createElement("iframe");
+  const params = new URLSearchParams({
+    channel: login,
+    muted: muted ? "true" : "false",
+    autoplay: "true",
+  });
+  parentHosts().forEach((p) => params.append("parent", p));
+  iframe.setAttribute("allow", "autoplay; fullscreen; picture-in-picture");
+  iframe.allowFullscreen = true;
+  iframe.title = `Stream ${displayName(login)}`;
+  iframe.src = `https://player.twitch.tv/?${params.toString()}`;
+  mount.appendChild(iframe);
+  return null;
+}
+
+function enableSoundFor(login) {
+  const entry = players.get(login);
+  if (!entry) return;
+  const mount = entry.card.querySelector(".twitch-mount");
+  entry.player = attachTwitchPlayer(mount, login, false);
+}
+
 function applySound() {
   players.forEach((entry, login) => {
-    if (entry.player && typeof entry.player.setMuted === "function") {
-      entry.player.setMuted(state.sound !== login);
-    }
+    const isOn = soundUnlocked && state.sound === login;
+    if (entry.player) syncPlayerMute(entry.player, login);
     const soundBtn = entry.card.querySelector(".sound");
     if (soundBtn) {
-      soundBtn.classList.toggle("on", state.sound === login);
-      soundBtn.textContent = state.sound === login ? "Son ON" : "Son";
+      soundBtn.classList.toggle("on", isOn);
+      soundBtn.textContent = isOn ? "Son ON" : "Son";
     }
   });
 }
@@ -235,30 +303,7 @@ function createPlayer(login) {
   card.append(mount, bar);
   grid.appendChild(card);
 
-  let player = null;
-  if (window.Twitch && window.Twitch.Player) {
-    player = new Twitch.Player(mount.id, {
-      channel: login,
-      width: "100%",
-      height: "100%",
-      muted: state.sound !== login,
-      parent: parentHosts(),
-      autoplay: true,
-    });
-  } else {
-    const iframe = document.createElement("iframe");
-    const params = new URLSearchParams({
-      channel: login,
-      muted: state.sound !== login ? "true" : "false",
-    });
-    parentHosts().forEach((p) => params.append("parent", p));
-    iframe.src = `https://player.twitch.tv/?${params.toString()}`;
-    iframe.allowFullscreen = true;
-    iframe.setAttribute("allow", "autoplay; fullscreen");
-    iframe.title = `Stream ${displayName(login)}`;
-    mount.appendChild(iframe);
-  }
-
+  const player = attachTwitchPlayer(mount, login, true);
   players.set(login, { card, player });
 }
 
