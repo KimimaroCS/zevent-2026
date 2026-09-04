@@ -323,10 +323,20 @@ body.has-chat .grid {
   cursor: pointer;
 }
 
+.sound-fab {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 3;
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
 .mini.sound.on,
 .mini.on {
-  background: var(--gold);
-  color: #16120a;
+  background: #00bd00;
+  color: #041204;
 }
 
 .mini.danger:hover {
