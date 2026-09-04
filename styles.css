@@ -236,8 +236,32 @@ body {
   gap: 8px;
   max-height: min(38vh, 340px);
   overflow: auto;
-  padding-bottom: 8px;
+  padding: 0 10px 8px 0;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 189, 0, 0.45) transparent;
+}
+
+.chips::-webkit-scrollbar {
+  width: 8px;
+}
+
+.chips::-webkit-scrollbar-track {
+  margin: 4px 0;
+  background: transparent;
+}
+
+.chips::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(0, 189, 0, 0.35);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.chips::-webkit-scrollbar-thumb:hover {
+  background: var(--green);
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 
 .catalog-empty {
@@ -472,6 +496,17 @@ body.has-chat .grid {
   min-width: 0;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 189, 0, 0.45) transparent;
+}
+
+.chat-tabs::-webkit-scrollbar {
+  height: 6px;
+}
+
+.chat-tabs::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(0, 189, 0, 0.35);
 }
 
 .chat-tab {
