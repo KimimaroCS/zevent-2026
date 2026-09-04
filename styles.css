@@ -1,16 +1,18 @@
 :root {
-  --bg: #070709;
-  --panel: #121218;
-  --panel-2: #1a1a22;
-  --line: rgba(255, 255, 255, 0.08);
-  --text: #f4f1ea;
-  --muted: #9a958a;
-  --gold: #ffe14a;
-  --gold-2: #f0c429;
+  --bg: #000;
+  --panel: #0e0e0e;
+  --panel-2: #111;
+  --line: #1d1d1d;
+  --line-2: #313131;
+  --text: #fff;
+  --muted: #cfcfcf;
+  --green: #00bd00;
+  --green-2: #14e014;
+  --green-dim: rgba(0, 189, 0, 0.16);
   --twitch: #9146ff;
   --danger: #ff5c7a;
-  --radius: 14px;
-  --topbar: 76px;
+  --radius: 12px;
+  --topbar: 84px;
   --chat-width: 380px;
 }
 
@@ -24,14 +26,14 @@ body {
   min-height: 100%;
   background: var(--bg);
   color: var(--text);
-  font-family: Manrope, system-ui, sans-serif;
+  font-family: Switzer, system-ui, sans-serif;
 }
 
 body {
   min-height: 100vh;
   background:
-    radial-gradient(1200px 500px at 10% -10%, rgba(145, 70, 255, 0.18), transparent 55%),
-    radial-gradient(900px 400px at 90% 0%, rgba(255, 225, 74, 0.12), transparent 50%),
+    radial-gradient(900px 420px at 8% -10%, rgba(0, 189, 0, 0.16), transparent 55%),
+    radial-gradient(700px 320px at 100% 0%, rgba(0, 189, 0, 0.08), transparent 50%),
     var(--bg);
 }
 
@@ -39,7 +41,7 @@ body {
   pointer-events: none;
   position: fixed;
   inset: 0;
-  opacity: 0.07;
+  opacity: 0.05;
   z-index: 0;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
@@ -66,9 +68,9 @@ body {
   gap: 16px;
   align-items: center;
   min-height: var(--topbar);
-  padding: 12px 18px;
+  padding: 10px 16px;
   border-bottom: 1px solid var(--line);
-  background: rgba(7, 7, 9, 0.78);
+  background: rgba(0, 0, 0, 0.86);
   backdrop-filter: blur(16px);
   position: sticky;
   top: 0;
@@ -77,37 +79,27 @@ body {
 
 .brand {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   align-items: center;
+  text-decoration: none;
+  color: inherit;
+  min-width: 0;
 }
 
-.brand-mark {
-  width: 46px;
-  height: 46px;
-  display: grid;
-  place-items: center;
-  background: var(--gold);
-  color: #111;
-  font-family: "Bebas Neue", sans-serif;
-  font-size: 34px;
-  border-radius: 10px;
-  letter-spacing: 0.02em;
+.brand-logo {
+  height: 64px;
+  width: auto;
+  max-width: 220px;
+  object-fit: contain;
+  display: block;
 }
 
-.brand-kicker {
-  margin: 0;
-  color: var(--gold-2);
-  font-size: 11px;
-  letter-spacing: 0.14em;
+.brand-sub {
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-}
-
-.brand h1 {
-  margin: 0;
-  font-family: "Bebas Neue", sans-serif;
-  font-size: 28px;
-  letter-spacing: 0.04em;
-  line-height: 1;
+  color: var(--green);
 }
 
 .add-form {
@@ -121,7 +113,7 @@ body {
 .add-form input,
 .catalog-head input {
   width: 100%;
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-2);
   background: var(--panel);
   color: var(--text);
   border-radius: 999px;
@@ -132,36 +124,40 @@ body {
 
 .add-form input:focus,
 .catalog-head input:focus {
-  border-color: var(--gold);
+  border-color: var(--green);
 }
 
 .btn {
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-2);
   background: var(--panel-2);
   color: var(--text);
   border-radius: 999px;
   padding: 10px 16px;
-  font: 700 13px/1 Manrope, sans-serif;
+  font: 700 13px/1 Switzer, sans-serif;
   cursor: pointer;
   white-space: nowrap;
 }
 
-.btn.primary {
-  background: var(--gold);
-  color: #16120a;
+.btn.primary,
+.btn.donate {
+  background: var(--green);
+  color: #041204;
   border-color: transparent;
 }
 
+.btn.primary:hover,
+.btn.donate:hover {
+  background: var(--green-2);
+}
+
 .btn.donate {
-  background: var(--twitch);
-  border-color: transparent;
   text-decoration: none;
 }
 
 .btn.ghost[aria-pressed="true"],
 .btn.ghost.active {
-  border-color: var(--gold);
-  color: var(--gold);
+  border-color: var(--green);
+  color: var(--green);
 }
 
 .top-actions {
@@ -173,7 +169,7 @@ body {
 .catalog {
   padding: 14px 18px 8px;
   border-bottom: 1px solid var(--line);
-  background: rgba(18, 18, 24, 0.72);
+  background: rgba(14, 14, 14, 0.92);
 }
 
 .catalog-head {
@@ -187,6 +183,7 @@ body {
 .catalog-head h2 {
   margin: 0;
   font-size: 15px;
+  color: var(--green);
 }
 
 .catalog-head p {
@@ -209,19 +206,19 @@ body {
 }
 
 .chip {
-  border: 1px solid var(--line);
-  background: #101016;
+  border: 1px solid var(--line-2);
+  background: #101010;
   color: var(--text);
   border-radius: 999px;
   padding: 7px 12px;
-  font: 650 12px/1 Manrope, sans-serif;
+  font: 650 12px/1 Switzer, sans-serif;
   cursor: pointer;
 }
 
 .chip.on {
-  background: rgba(255, 225, 74, 0.14);
-  border-color: var(--gold);
-  color: var(--gold);
+  background: var(--green-dim);
+  border-color: var(--green);
+  color: var(--green);
 }
 
 .stage {
@@ -319,23 +316,13 @@ body.has-chat .grid {
   padding: 6px 10px;
   background: rgba(255, 255, 255, 0.12);
   color: #fff;
-  font: 700 11px/1 Manrope, sans-serif;
+  font: 700 11px/1 Switzer, sans-serif;
   cursor: pointer;
-}
-
-.sound-fab {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 3;
-  opacity: 1;
-  background: rgba(0, 0, 0, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .mini.sound.on,
 .mini.on {
-  background: #00bd00;
+  background: var(--green);
   color: #041204;
 }
 
@@ -352,7 +339,7 @@ body.has-chat .grid {
   z-index: 8;
   width: min(var(--chat-width), 100vw);
   flex-direction: column;
-  background: #0b0b10;
+  background: #0b0b0b;
   border-left: 1px solid var(--line);
   box-shadow: -16px 0 40px rgba(0, 0, 0, 0.45);
 }
@@ -398,20 +385,20 @@ body.has-chat .grid {
   align-items: center;
   gap: 4px;
   flex: 0 0 auto;
-  border: 1px solid var(--line);
-  background: #15151c;
+  border: 1px solid var(--line-2);
+  background: #151515;
   color: var(--text);
   border-radius: 999px;
   padding: 5px 6px 5px 10px;
-  font: 700 12px/1 Manrope, sans-serif;
+  font: 700 12px/1 Switzer, sans-serif;
   cursor: pointer;
   white-space: nowrap;
 }
 
 .chat-tab.active {
-  border-color: var(--gold);
-  color: var(--gold);
-  background: rgba(255, 225, 74, 0.1);
+  border-color: var(--green);
+  color: var(--green);
+  background: var(--green-dim);
 }
 
 .chat-tab .tab-close {
@@ -466,7 +453,7 @@ body.has-chat .grid {
   height: 100%;
   border: 0;
   min-height: 0;
-  background: #0e0e14;
+  background: #0e0e0e;
 }
 
 .icon-btn {
@@ -501,8 +488,8 @@ body.has-streams .hint {
     width: 100%;
   }
 
-  :root {
-    --topbar: auto;
+  .brand-logo {
+    height: 52px;
   }
 
   .chat-dock.is-open {

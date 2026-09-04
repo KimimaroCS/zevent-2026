@@ -3,7 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#00BD00" />
     <title>ZEVENT Multiview</title>
+    <link rel="icon" href="./assets/zevent.svg" type="image/svg+xml" />
     <script>
       (function () {
         var path = location.pathname;
@@ -13,10 +15,9 @@
         }
       })();
     </script>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://api.fontshare.com" />
     <link
-      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=swap"
+      href="https://api.fontshare.com/v2/css?f[]=switzer@400,500,600,700,800&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./styles.css" />
@@ -24,13 +25,10 @@
   <body>
     <div class="grain" aria-hidden="true"></div>
     <header class="topbar">
-      <div class="brand">
-        <span class="brand-mark">Z</span>
-        <div>
-          <p class="brand-kicker">4–6 septembre · Montpellier</p>
-          <h1>ZEVENT Multiview</h1>
-        </div>
-      </div>
+      <a class="brand" href="https://zevent.fr" target="_blank" rel="noreferrer">
+        <img class="brand-logo" src="./assets/logo-zevent.png" alt="ZEVENT" />
+        <span class="brand-sub">Multiview</span>
+      </a>
 
       <form class="add-form" id="add-form">
         <label class="sr-only" for="channel-input">Pseudo Twitch</label>

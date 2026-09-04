@@ -50,7 +50,7 @@ function loadState() {
         return {
           channels: parsed.channels,
           theater: parsed.theater || null,
-          sound: null,
+          sound: parsed.sound || parsed.channels[0],
           chats: [],
           chatActive: parsed.channels[0],
           chatSplit: false,
@@ -65,7 +65,7 @@ function loadState() {
   return {
     channels: [...DEFAULT_CHANNELS],
     theater: null,
-    sound: null,
+    sound: DEFAULT_CHANNELS[0],
     chats: [],
     chatActive: DEFAULT_CHANNELS[0],
     chatSplit: false,
@@ -93,6 +93,7 @@ function addChannel(raw) {
   const login = normalize(raw);
   if (!login || state.channels.includes(login)) return;
   state.channels.push(login);
+  if (!state.sound) state.sound = login;
   if (!state.chatActive) state.chatActive = login;
   saveState();
   syncPlayers();
@@ -102,7 +103,7 @@ function addChannel(raw) {
 function removeChannel(login) {
   state.channels = state.channels.filter((c) => c !== login);
   if (state.theater === login) state.theater = null;
-  if (state.sound === login) state.sound = null;
+  if (state.sound === login) state.sound = state.channels[0] || null;
   state.chats = state.chats.filter((c) => c !== login);
   if (state.chatActive === login) state.chatActive = state.chats[0] || state.channels[0] || null;
   saveState();
@@ -112,6 +113,7 @@ function removeChannel(login) {
 
 function setTheater(login) {
   state.theater = state.theater === login ? null : login;
+  if (state.theater) state.sound = login;
   saveState();
   syncPlayers();
   updateChrome();
@@ -125,19 +127,10 @@ function clearTheater() {
 }
 
 function setSound(login) {
-  const previous = state.sound;
-  if (previous === login) {
-    state.sound = null;
-    saveState();
-    mountEmbed(login, true);
-    updateSoundButtons();
-    return;
-  }
   state.sound = login;
   saveState();
-  if (previous) mountEmbed(previous, true);
-  mountEmbed(login, false);
-  updateSoundButtons();
+  applySound();
+  updateChrome();
 }
 
 function setChat(open, login = state.chatActive) {
@@ -183,39 +176,16 @@ function positionChatDock() {
   chatPanel.style.top = `${Math.max(0, top)}px`;
 }
 
-function playerUrl(login, muted) {
-  const params = new URLSearchParams({
-    channel: login,
-    muted: muted ? "true" : "false",
-    autoplay: "true",
-  });
-  parentHosts().forEach((p) => params.append("parent", p));
-  return `https://player.twitch.tv/?${params.toString()}`;
-}
-
-function mountEmbed(login, muted) {
-  const entry = players.get(login);
-  if (!entry) return;
-  const mount = entry.card.querySelector(".twitch-mount");
-  if (!mount) return;
-  mount.innerHTML = "";
-  const iframe = document.createElement("iframe");
-  iframe.src = playerUrl(login, muted);
-  iframe.allowFullscreen = true;
-  iframe.setAttribute("allow", "autoplay; fullscreen; encrypted-media");
-  iframe.title = `Stream ${displayName(login)}`;
-  mount.appendChild(iframe);
-  entry.player = null;
-}
-
-function updateSoundButtons() {
+function applySound() {
   players.forEach((entry, login) => {
-    const on = state.sound === login;
-    entry.card.querySelectorAll(".sound").forEach((btn) => {
-      btn.classList.toggle("on", on);
-      btn.setAttribute("aria-pressed", String(on));
-      btn.textContent = on ? "Audio ON" : "Audio";
-    });
+    if (entry.player && typeof entry.player.setMuted === "function") {
+      entry.player.setMuted(state.sound !== login);
+    }
+    const soundBtn = entry.card.querySelector(".sound");
+    if (soundBtn) {
+      soundBtn.classList.toggle("on", state.sound === login);
+      soundBtn.textContent = state.sound === login ? "Son ON" : "Son";
+    }
   });
 }
 
@@ -246,20 +216,7 @@ function createPlayer(login) {
   const soundBtn = document.createElement("button");
   soundBtn.type = "button";
   soundBtn.className = "mini sound";
-  soundBtn.textContent = "Audio";
-  soundBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    setSound(login);
-  });
-
-  const soundFab = document.createElement("button");
-  soundFab.type = "button";
-  soundFab.className = "mini sound sound-fab";
-  soundFab.textContent = "Audio";
-  soundFab.addEventListener("click", (e) => {
-    e.stopPropagation();
-    setSound(login);
-  });
+  soundBtn.addEventListener("click", () => setSound(login));
 
   const chatBtn = document.createElement("button");
   chatBtn.type = "button";
@@ -275,11 +232,34 @@ function createPlayer(login) {
 
   actions.append(theaterBtn, soundBtn, chatBtn, removeBtn);
   bar.append(name, actions);
-  card.append(mount, soundFab, bar);
+  card.append(mount, bar);
   grid.appendChild(card);
 
-  players.set(login, { card, player: null });
-  mountEmbed(login, true);
+  let player = null;
+  if (window.Twitch && window.Twitch.Player) {
+    player = new Twitch.Player(mount.id, {
+      channel: login,
+      width: "100%",
+      height: "100%",
+      muted: state.sound !== login,
+      parent: parentHosts(),
+      autoplay: true,
+    });
+  } else {
+    const iframe = document.createElement("iframe");
+    const params = new URLSearchParams({
+      channel: login,
+      muted: state.sound !== login ? "true" : "false",
+    });
+    parentHosts().forEach((p) => params.append("parent", p));
+    iframe.src = `https://player.twitch.tv/?${params.toString()}`;
+    iframe.allowFullscreen = true;
+    iframe.setAttribute("allow", "autoplay; fullscreen");
+    iframe.title = `Stream ${displayName(login)}`;
+    mount.appendChild(iframe);
+  }
+
+  players.set(login, { card, player });
 }
 
 function syncPlayers() {
@@ -300,7 +280,7 @@ function syncPlayers() {
   });
 
   grid.dataset.layout = state.theater ? "theater" : "grid";
-  updateSoundButtons();
+  applySound();
 }
 
 function renderCatalog() {
@@ -450,7 +430,7 @@ document.addEventListener("keydown", (e) => {
 if (window.location.protocol === "file:") {
   document.body.insertAdjacentHTML(
     "afterbegin",
-    `<p class="hint" style="padding:12px 18px;color:#ffe14a">Ouvre le site via <code>lancer.bat</code> (http://localhost:5173). Twitch bloque les players en fichier local.</p>`
+    `<p class="hint" style="padding:12px 18px;color:#00bd00">Ouvre le site via <code>lancer.bat</code> (http://localhost:5173). Twitch bloque les players en fichier local.</p>`
   );
 }
 
