@@ -1,6 +1,10 @@
 const STORAGE_KEY = "zevent-multiview-v2";
 const CHAT_MIN = 300;
 const CHAT_MAX = 640;
+const LIVE_POLL_MS = 60000;
+const MAX_AUTO_ADD = 8;
+const TWITCH_GQL = "https://gql.twitch.tv/gql";
+const TWITCH_WEB_CLIENT = "kimne78kx3ncx6brgo4mv6wki5h1ko";
 
 const grid = document.getElementById("grid");
 const addForm = document.getElementById("add-form");
@@ -8,6 +12,10 @@ const channelInput = document.getElementById("channel-input");
 const catalog = document.getElementById("catalog");
 const catalogList = document.getElementById("catalog-list");
 const catalogSearch = document.getElementById("catalog-search");
+const catalogStatus = document.getElementById("catalog-status");
+const filterAll = document.getElementById("filter-all");
+const filterLive = document.getElementById("filter-live");
+const addLivesBtn = document.getElementById("add-lives");
 const toggleCatalog = document.getElementById("toggle-catalog");
 const toggleChat = document.getElementById("toggle-chat");
 const closeChat = document.getElementById("close-chat");
@@ -20,7 +28,10 @@ const exitTheater = document.getElementById("exit-theater");
 const topbar = document.querySelector(".topbar");
 
 const players = new Map();
+const liveByLogin = new Map();
 const state = loadState();
+let catalogLiveOnly = false;
+let liveFetchOk = true;
 
 function parentHosts() {
   const host = window.location.hostname || "localhost";
@@ -87,8 +98,83 @@ function chatSrc(login) {
 }
 
 function displayName(login) {
+  const live = liveByLogin.get(login);
+  if (live?.displayName) return live.displayName;
   const known = ZEVENT_STREAMERS.find((s) => s.login === login);
   return known ? known.name : login;
+}
+
+function isLive(login) {
+  return Boolean(liveByLogin.get(login)?.live);
+}
+
+function formatViewers(n) {
+  if (n < 1000) return String(n);
+  const rounded = n >= 10000 ? (n / 1000).toFixed(0) : (n / 1000).toFixed(1);
+  return `${rounded.replace(".", ",")} k`;
+}
+
+function liveLogins() {
+  return [...liveByLogin.entries()]
+    .filter(([, info]) => info.live)
+    .sort((a, b) => b[1].viewers - a[1].viewers)
+    .map(([login]) => login);
+}
+
+async function fetchLiveChunk(logins) {
+  const query = `query { users(logins: ${JSON.stringify(logins)}) { login displayName stream { title viewersCount } } }`;
+  const res = await fetch(TWITCH_GQL, {
+    method: "POST",
+    headers: {
+      "Client-ID": TWITCH_WEB_CLIENT,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ query }),
+  });
+  if (!res.ok) throw new Error(`gql ${res.status}`);
+  const json = await res.json();
+  for (const user of json.data?.users || []) {
+    if (!user?.login) continue;
+    liveByLogin.set(user.login.toLowerCase(), {
+      displayName: user.displayName || user.login,
+      live: Boolean(user.stream),
+      title: user.stream?.title || "",
+      viewers: Number(user.stream?.viewersCount) || 0,
+    });
+  }
+}
+
+async function refreshLiveStatus() {
+  const extras = state.channels.filter((login) => !ZEVENT_STREAMERS.some((s) => s.login === login));
+  const all = [...new Set([...ZEVENT_STREAMERS.map((s) => s.login), ...extras])];
+  try {
+    for (let i = 0; i < all.length; i += 30) {
+      await fetchLiveChunk(all.slice(i, i + 30));
+    }
+    liveFetchOk = true;
+  } catch {
+    liveFetchOk = false;
+  }
+  renderCatalog();
+  updatePlayerLiveBadges();
+}
+
+function addTopLives() {
+  const room = Math.max(0, MAX_AUTO_ADD - state.channels.length);
+  if (!room) return;
+  let added = 0;
+  for (const login of liveLogins()) {
+    if (added >= room) break;
+    if (state.channels.includes(login)) continue;
+    state.channels.push(login);
+    if (!state.sound) state.sound = login;
+    if (!state.chatActive) state.chatActive = login;
+    added += 1;
+  }
+  if (!added) return;
+  saveState();
+  syncPlayers();
+  updateChrome();
 }
 
 function addChannel(raw) {
@@ -249,9 +335,18 @@ function createPlayer(login) {
   const bar = document.createElement("div");
   bar.className = "player-bar";
 
+  const nameWrap = document.createElement("div");
+  nameWrap.className = "player-id";
+
   const name = document.createElement("span");
   name.className = "player-name";
   name.textContent = displayName(login);
+
+  const livePill = document.createElement("span");
+  livePill.className = "live-pill";
+  livePill.hidden = true;
+
+  nameWrap.append(name, livePill);
 
   const actions = document.createElement("div");
   actions.className = "player-actions";
@@ -279,7 +374,7 @@ function createPlayer(login) {
   removeBtn.addEventListener("click", () => removeChannel(login));
 
   actions.append(theaterBtn, soundBtn, chatBtn, removeBtn);
-  bar.append(name, actions);
+  bar.append(nameWrap, actions);
   card.append(mount, bar);
   grid.appendChild(card);
 
@@ -306,18 +401,94 @@ function syncPlayers() {
 
   grid.dataset.layout = state.theater ? "theater" : "grid";
   applySound();
+  updatePlayerLiveBadges();
+}
+
+function updatePlayerLiveBadges() {
+  players.forEach((entry, login) => {
+    const name = entry.card.querySelector(".player-name");
+    const pill = entry.card.querySelector(".live-pill");
+    const info = liveByLogin.get(login);
+    if (name) name.textContent = displayName(login);
+    if (!pill) return;
+    if (info?.live) {
+      pill.hidden = false;
+      pill.textContent = `LIVE ${formatViewers(info.viewers)}`;
+      pill.title = info.title || "";
+    } else {
+      pill.hidden = true;
+      pill.textContent = "";
+      pill.removeAttribute("title");
+    }
+  });
 }
 
 function renderCatalog() {
   const q = catalogSearch.value.trim().toLowerCase();
+  const liveCount = liveLogins().length;
+  if (catalogStatus) {
+    if (!liveFetchOk) {
+      catalogStatus.textContent = "Statut live indisponible — le catalogue reste utilisable.";
+    } else if (!liveByLogin.size) {
+      catalogStatus.textContent = "Chargement des lives…";
+    } else {
+      catalogStatus.textContent = `${liveCount} en live · ${ZEVENT_STREAMERS.length} streamers — clique pour ajouter.`;
+    }
+  }
+  if (filterAll) filterAll.classList.toggle("on", !catalogLiveOnly);
+  if (filterLive) {
+    filterLive.classList.toggle("on", catalogLiveOnly);
+    filterLive.textContent = liveByLogin.size ? `En live (${liveCount})` : "En live";
+  }
+  if (addLivesBtn) {
+    const room = Math.max(0, MAX_AUTO_ADD - state.channels.length);
+    addLivesBtn.disabled = !liveCount || room === 0;
+    addLivesBtn.textContent =
+      room === 0 ? `Grille pleine (${MAX_AUTO_ADD})` : "Ajouter les plus gros";
+  }
+
+  const rows = ZEVENT_STREAMERS.filter((s) => {
+    if (q && !s.name.toLowerCase().includes(q) && !s.login.includes(q)) return false;
+    if (catalogLiveOnly && !isLive(s.login)) return false;
+    return true;
+  }).sort((a, b) => {
+    const liveA = liveByLogin.get(a.login);
+    const liveB = liveByLogin.get(b.login);
+    const aOn = Boolean(liveA?.live);
+    const bOn = Boolean(liveB?.live);
+    if (aOn !== bOn) return aOn ? -1 : 1;
+    if (aOn && bOn) return liveB.viewers - liveA.viewers;
+    return displayName(a.login).localeCompare(displayName(b.login), "fr");
+  });
+
   catalogList.innerHTML = "";
-  ZEVENT_STREAMERS.filter(
-    (s) => !q || s.name.toLowerCase().includes(q) || s.login.includes(q)
-  ).forEach((s) => {
+  if (!rows.length) {
+    const empty = document.createElement("p");
+    empty.className = "catalog-empty";
+    empty.textContent = !liveByLogin.size
+      ? "Chargement des lives…"
+      : catalogLiveOnly
+        ? "Personne en live pour ce filtre."
+        : "Aucun streamer.";
+    catalogList.appendChild(empty);
+    return;
+  }
+
+  rows.forEach((s) => {
+    const info = liveByLogin.get(s.login);
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.className = `chip${state.channels.includes(s.login) ? " on" : ""}`;
-    btn.textContent = s.name;
+    btn.className = `chip${state.channels.includes(s.login) ? " on" : ""}${info?.live ? " live" : ""}`;
+    if (info?.title) btn.title = info.title;
+    const label = document.createElement("span");
+    label.textContent = displayName(s.login);
+    btn.appendChild(label);
+    if (info?.live) {
+      const viewers = document.createElement("span");
+      viewers.className = "chip-viewers";
+      viewers.textContent = formatViewers(info.viewers);
+      btn.appendChild(viewers);
+    }
     btn.addEventListener("click", () => {
       if (state.channels.includes(s.login)) removeChannel(s.login);
       else addChannel(s.login);
@@ -415,6 +586,15 @@ toggleCatalog.addEventListener("click", () => {
 });
 
 catalogSearch.addEventListener("input", renderCatalog);
+filterAll?.addEventListener("click", () => {
+  catalogLiveOnly = false;
+  renderCatalog();
+});
+filterLive?.addEventListener("click", () => {
+  catalogLiveOnly = true;
+  renderCatalog();
+});
+addLivesBtn?.addEventListener("click", addTopLives);
 toggleChat.addEventListener("click", () => {
   if (state.chats.length) setChat(false);
 });
@@ -462,6 +642,8 @@ if (window.location.protocol === "file:") {
 function boot() {
   syncPlayers();
   updateChrome();
+  refreshLiveStatus();
+  setInterval(refreshLiveStatus, LIVE_POLL_MS);
 }
 
 if (document.readyState === "loading") {

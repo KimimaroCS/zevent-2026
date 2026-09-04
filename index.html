@@ -58,9 +58,16 @@
       <div class="catalog-head">
         <div>
           <h2>Streamers ZEVENT</h2>
-          <p>Clique pour ajouter ou retirer un player.</p>
+          <p id="catalog-status">Clique pour ajouter ou retirer un player.</p>
         </div>
-        <input id="catalog-search" type="search" placeholder="Rechercher…" />
+        <div class="catalog-tools">
+          <div class="catalog-filters" role="group" aria-label="Filtrer le catalogue">
+            <button type="button" class="mini on" id="filter-all">Tous</button>
+            <button type="button" class="mini" id="filter-live">En live</button>
+          </div>
+          <button type="button" class="btn ghost" id="add-lives" disabled>Ajouter les plus gros</button>
+          <input id="catalog-search" type="search" placeholder="Rechercher…" />
+        </div>
       </div>
       <div class="chips" id="catalog-list"></div>
     </aside>
@@ -87,7 +94,6 @@
       Clique <em>Théâtre</em> pour agrandir un live.
     </p>
 
-    <script src="https://embed.twitch.tv/embed/v1.js"></script>
     <script src="./streamers.js"></script>
     <script src="./app.js"></script>
   </body>

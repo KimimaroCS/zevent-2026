@@ -180,6 +180,19 @@ body {
   margin-bottom: 12px;
 }
 
+.catalog-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.catalog-filters {
+  display: flex;
+  gap: 6px;
+}
+
 .catalog-head h2 {
   margin: 0;
   font-size: 15px;
@@ -196,16 +209,30 @@ body {
   max-width: 280px;
 }
 
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .chips {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  max-height: 168px;
+  max-height: min(38vh, 340px);
   overflow: auto;
   padding-bottom: 8px;
 }
 
+.catalog-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   border: 1px solid var(--line-2);
   background: #101010;
   color: var(--text);
@@ -215,9 +242,32 @@ body {
   cursor: pointer;
 }
 
+.chip.live::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+}
+
 .chip.on {
   background: var(--green-dim);
   border-color: var(--green);
+  color: var(--green);
+}
+
+.chip.live:not(.on) {
+  border-color: rgba(0, 189, 0, 0.45);
+}
+
+.chip-viewers {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.chip.live .chip-viewers {
   color: var(--green);
 }
 
@@ -301,10 +351,27 @@ body.has-chat .grid {
   border-top: 1px solid var(--line);
 }
 
+.player-id {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
 .player-name {
   font-weight: 800;
   font-size: 13px;
   text-shadow: 0 1px 8px #000;
+}
+
+.live-pill {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 3px 7px;
+  background: var(--green);
+  color: #041204;
+  font: 800 10px/1 Switzer, sans-serif;
+  letter-spacing: 0.04em;
 }
 
 .player-actions {
@@ -486,8 +553,11 @@ body.has-streams .hint {
   }
 
   .add-form,
-  .top-actions {
+  .top-actions,
+  .catalog-tools,
+  .catalog-head input {
     width: 100%;
+    max-width: none;
   }
 
   .brand-logo {
