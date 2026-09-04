@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZEVENT Multiview</title>
+    <script>
+      (function () {
+        var path = location.pathname;
+        if (/index\.html$/i.test(path)) return;
+        if (path !== "/" && !path.endsWith("/")) {
+          location.replace(path + "/" + location.search + location.hash);
+        }
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="grain" aria-hidden="true"></div>
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">Z</span>
+        <div>
+          <p class="brand-kicker">4–6 septembre · Montpellier</p>
+          <h1>ZEVENT Multiview</h1>
+        </div>
+      </div>
+
+      <form class="add-form" id="add-form">
+        <label class="sr-only" for="channel-input">Pseudo Twitch</label>
+        <input
+          id="channel-input"
+          type="text"
+          placeholder="Ajouter un streamer (ex. domingo)"
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <button type="submit" class="btn primary">Ajouter</button>
+      </form>
+
+      <div class="top-actions">
+        <button type="button" class="btn ghost" id="toggle-catalog" aria-expanded="false">
+          Catalogue
+        </button>
+        <button type="button" class="btn ghost" id="toggle-chat" aria-pressed="false">
+          Chat
+        </button>
+        <button type="button" class="btn ghost" id="exit-theater" hidden>Quitter théâtre</button>
+        <a class="btn donate" href="https://zevent.fr" target="_blank" rel="noreferrer">Donner</a>
+      </div>
+    </header>
+
+    <aside class="catalog" id="catalog" hidden>
+      <div class="catalog-head">
+        <div>
+          <h2>Streamers ZEVENT</h2>
+          <p>Clique pour ajouter ou retirer un player.</p>
+        </div>
+        <input id="catalog-search" type="search" placeholder="Rechercher…" />
+      </div>
+      <div class="chips" id="catalog-list"></div>
+    </aside>
+
+    <main class="stage">
+      <section class="grid" id="grid" data-layout="grid"></section>
+      <aside class="chat-dock" id="chat-panel" hidden>
+        <div class="chat-resize" id="chat-resize" role="separator" aria-orientation="vertical" aria-label="Redimensionner le chat"></div>
+        <div class="chat-head">
+          <div class="chat-tabs" id="chat-tabs"></div>
+          <div class="chat-head-actions">
+            <button type="button" class="mini" id="chat-split" hidden>2 chats</button>
+            <button type="button" class="icon-btn" id="close-chat" aria-label="Fermer le chat">
+              ×
+            </button>
+          </div>
+        </div>
+        <div class="chat-bodies" id="chat-bodies"></div>
+      </aside>
+    </main>
+
+    <p class="hint" id="empty-hint">
+      Ajoute Domingo, Amixem, SylvainLyve… tous les players s’affichent en même temps.
+      Clique <em>Théâtre</em> pour agrandir un live.
+    </p>
+
+    <script src="https://embed.twitch.tv/embed/v1.js"></script>
+    <script src="./streamers.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
