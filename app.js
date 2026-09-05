@@ -26,6 +26,11 @@ const chatSplitBtn = document.getElementById("chat-split");
 const chatResize = document.getElementById("chat-resize");
 const exitTheater = document.getElementById("exit-theater");
 const topbar = document.querySelector(".topbar");
+const twitchLoginBtn = document.getElementById("twitch-login-btn");
+const twitchLoginDialog = document.getElementById("twitch-login-dialog");
+const twitchLoginMount = document.getElementById("twitch-login-mount");
+const twitchLoginPopup = document.getElementById("twitch-login-popup");
+const twitchLoginReload = document.getElementById("twitch-login-reload");
 
 const players = new Map();
 const liveByLogin = new Map();
@@ -310,8 +315,11 @@ function iframeIsMuted(iframe) {
 }
 
 function configureIframe(iframe, title) {
-  iframe.setAttribute("allow", "autoplay; fullscreen; picture-in-picture; encrypted-media; playsinline");
-  iframe.allow = "autoplay; fullscreen; picture-in-picture; encrypted-media; playsinline";
+  iframe.setAttribute(
+    "allow",
+    "autoplay; fullscreen; picture-in-picture; encrypted-media; playsinline; storage-access *"
+  );
+  iframe.allow = "autoplay; fullscreen; picture-in-picture; encrypted-media; playsinline; storage-access *";
   iframe.allowFullscreen = true;
   iframe.setAttribute("allowfullscreen", "true");
   iframe.setAttribute("webkitallowfullscreen", "true");
@@ -328,6 +336,62 @@ function mountPlayer(mount, login, muted) {
   mount.appendChild(iframe);
   iframe.src = playerSrc(login, muted);
   return iframe;
+}
+
+function remountAllTwitchFrames() {
+  players.forEach((entry, login) => {
+    const mount = entry.card.querySelector(".twitch-mount");
+    const iframe = mount?.querySelector("iframe");
+    const muted = !iframe || iframeIsMuted(iframe);
+    if (mount) mountPlayer(mount, login, muted);
+  });
+  chatBodies.querySelectorAll(".chat-pane").forEach((pane) => {
+    const login = pane.dataset.channel;
+    const frame = pane.querySelector("iframe");
+    if (login && frame) frame.src = chatSrc(login);
+  });
+  mountLoginPreview();
+}
+
+function loginPreviewChannel() {
+  return (
+    state.channels.find((login) => isLive(login)) ||
+    state.channels[0] ||
+    ZEVENT_STREAMERS[0]?.login ||
+    "twitch"
+  );
+}
+
+function mountLoginPreview() {
+  if (!twitchLoginMount) return;
+  const login = loginPreviewChannel();
+  mountPlayer(twitchLoginMount, login, true);
+}
+
+function openTwitchLoginPopup() {
+  const width = 520;
+  const height = 740;
+  const left = Math.round(window.screenX + (window.outerWidth - width) / 2);
+  const top = Math.round(window.screenY + (window.outerHeight - height) / 2);
+  const features = `popup=yes,width=${width},height=${height},left=${left},top=${top}`;
+  const popup = window.open("https://www.twitch.tv/login", "twitch-login", features);
+  if (!popup) {
+    window.open("https://www.twitch.tv/login", "_blank", "noopener,noreferrer");
+    return;
+  }
+  const timer = setInterval(() => {
+    if (popup.closed) {
+      clearInterval(timer);
+      remountAllTwitchFrames();
+    }
+  }, 400);
+}
+
+function openTwitchLoginDialog() {
+  if (!twitchLoginDialog) return;
+  mountLoginPreview();
+  if (typeof twitchLoginDialog.showModal === "function") twitchLoginDialog.showModal();
+  else twitchLoginDialog.setAttribute("open", "");
 }
 
 function applySound({ userGesture = false, target = null } = {}) {
@@ -634,6 +698,15 @@ chatSplitBtn.addEventListener("click", () => {
   updateChrome();
 });
 exitTheater.addEventListener("click", clearTheater);
+twitchLoginBtn?.addEventListener("click", openTwitchLoginDialog);
+twitchLoginPopup?.addEventListener("click", openTwitchLoginPopup);
+twitchLoginReload?.addEventListener("click", () => {
+  remountAllTwitchFrames();
+  twitchLoginDialog?.close();
+});
+twitchLoginDialog?.addEventListener("close", () => {
+  twitchLoginMount?.replaceChildren();
+});
 
 chatResize.addEventListener("pointerdown", (e) => {
   e.preventDefault();

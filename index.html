@@ -50,6 +50,9 @@
       </form>
 
       <div class="top-actions">
+        <button type="button" class="btn twitch" id="twitch-login-btn">
+          Connexion Twitch
+        </button>
         <button type="button" class="btn ghost" id="toggle-catalog" aria-expanded="false">
           Catalogue
         </button>
@@ -99,7 +102,36 @@
     <p class="hint" id="empty-hint">
       Ajoute Domingo, Amixem, SylvainLyve… tous les players s’affichent en même temps.
       Clique <em>Théâtre</em> pour agrandir un live.
+      Pour les pubs : <em>Connexion Twitch</em> (Turbo, abo chaîne ou Prime).
     </p>
+
+    <dialog class="twitch-dialog" id="twitch-login-dialog" aria-labelledby="twitch-login-title">
+      <form method="dialog" class="twitch-dialog-card">
+        <div class="twitch-dialog-head">
+          <h2 id="twitch-login-title">Compte Twitch &amp; pubs</h2>
+          <button type="submit" class="icon-btn" value="cancel" aria-label="Fermer">×</button>
+        </div>
+        <p>
+          Ce site n’est pas Twitch : les lives sont des <strong>lecteurs embarqués</strong>.
+          Un bouton « Se connecter » sur la page ne suffit pas — le navigateur isole les cookies.
+        </p>
+        <p>
+          Pour profiter de <strong>Twitch Turbo</strong>, d’un <strong>abonnement</strong> à la chaîne
+          ou de <strong>Prime Gaming</strong> (ce n’est pas Discord Nitro), connecte-toi
+          <strong>dans le player Twitch</strong> ci-dessous, via l’icône compte.
+        </p>
+        <div class="twitch-login-mount" id="twitch-login-mount"></div>
+        <ol class="twitch-steps">
+          <li>Clique l’icône compte dans le player, puis connecte-toi.</li>
+          <li>Si rien ne change, ouvre aussi la page de connexion Twitch (popup).</li>
+          <li>Recharge ensuite les lives pour appliquer la session à toute la grille.</li>
+        </ol>
+        <div class="twitch-dialog-actions">
+          <button type="button" class="btn ghost" id="twitch-login-popup">Ouvrir twitch.tv/login</button>
+          <button type="button" class="btn twitch" id="twitch-login-reload">Recharger les lives</button>
+        </div>
+      </form>
+    </dialog>
 
     <script src="./streamers.js"></script>
     <script src="./app.js"></script>
