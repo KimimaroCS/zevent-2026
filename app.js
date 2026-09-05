@@ -368,23 +368,11 @@ function mountLoginPreview() {
   mountPlayer(twitchLoginMount, login, true);
 }
 
-function openTwitchLoginPopup() {
-  const width = 520;
-  const height = 740;
-  const left = Math.round(window.screenX + (window.outerWidth - width) / 2);
-  const top = Math.round(window.screenY + (window.outerHeight - height) / 2);
-  const features = `popup=yes,width=${width},height=${height},left=${left},top=${top}`;
-  const popup = window.open("https://www.twitch.tv/login", "twitch-login", features);
-  if (!popup) {
-    window.open("https://www.twitch.tv/login", "_blank", "noopener,noreferrer");
-    return;
-  }
-  const timer = setInterval(() => {
-    if (popup.closed) {
-      clearInterval(timer);
-      remountAllTwitchFrames();
-    }
-  }, 400);
+function openTwitchLoginPopup(e) {
+  e?.preventDefault();
+  const url = "https://www.twitch.tv/login";
+  const popup = window.open(url, "_blank", "noopener,noreferrer");
+  if (!popup) window.location.assign(url);
 }
 
 function openTwitchLoginDialog() {
@@ -460,13 +448,21 @@ function createPlayer(login) {
   chatBtn.textContent = "Chat";
   chatBtn.addEventListener("click", () => setChat(true, login));
 
+  const openTwitch = document.createElement("a");
+  openTwitch.className = "mini";
+  openTwitch.href = `https://www.twitch.tv/${login}`;
+  openTwitch.target = "_blank";
+  openTwitch.rel = "noreferrer";
+  openTwitch.textContent = "Twitch";
+  openTwitch.title = "Ouvrir sur twitch.tv (sans pubs si le compte Turbo est connecté dans Safari)";
+
   const removeBtn = document.createElement("button");
   removeBtn.type = "button";
   removeBtn.className = "mini danger";
   removeBtn.textContent = "Retirer";
   removeBtn.addEventListener("click", () => removeChannel(login));
 
-  actions.append(theaterBtn, soundBtn, chatBtn, removeBtn);
+  actions.append(theaterBtn, soundBtn, chatBtn, openTwitch, removeBtn);
   bar.append(nameWrap, actions);
   card.append(mount, bar);
   grid.appendChild(card);

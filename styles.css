@@ -447,6 +447,13 @@ body.has-chat .grid {
   touch-action: manipulation;
 }
 
+a.mini {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
 .mini.sound.on,
 .mini.on {
   background: var(--green);
@@ -657,6 +664,20 @@ body.has-chat .grid {
 .twitch-dialog-card strong {
   color: var(--text);
   font-weight: 650;
+}
+
+.twitch-callout {
+  border: 1px solid rgba(145, 70, 255, 0.45);
+  background: rgba(145, 70, 255, 0.12);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+a.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
 }
 
 .twitch-login-mount {

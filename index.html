@@ -102,32 +102,43 @@
     <p class="hint" id="empty-hint">
       Ajoute Domingo, Amixem, SylvainLyve… tous les players s’affichent en même temps.
       Clique <em>Théâtre</em> pour agrandir un live.
-      Pour les pubs : <em>Connexion Twitch</em> (Turbo, abo chaîne ou Prime).
+      Sur iPad, les pubs partent seulement si le compte Twitch (Turbo / abo / Prime) est ouvert
+      <em>dans Safari</em> — bouton <em>Connexion Twitch</em>.
     </p>
 
     <dialog class="twitch-dialog" id="twitch-login-dialog" aria-labelledby="twitch-login-title">
       <form method="dialog" class="twitch-dialog-card">
         <div class="twitch-dialog-head">
-          <h2 id="twitch-login-title">Compte Twitch &amp; pubs</h2>
+          <h2 id="twitch-login-title">Pubs sur iPad / navigateur</h2>
           <button type="submit" class="icon-btn" value="cancel" aria-label="Fermer">×</button>
         </div>
         <p>
-          Ce site n’est pas Twitch : les lives sont des <strong>lecteurs embarqués</strong>.
-          Un bouton « Se connecter » sur la page ne suffit pas — le navigateur isole les cookies.
+          Être connectée dans l’<strong>app Twitch</strong> ne compte pas ici.
+          Safari (et Chrome sur iPad) bloque les cookies des lecteurs embarqués :
+          sans session Twitch <strong>dans ce navigateur</strong>, Turbo / abo / Prime
+          ne s’appliquent pas → pubs.
         </p>
-        <p>
-          Pour profiter de <strong>Twitch Turbo</strong>, d’un <strong>abonnement</strong> à la chaîne
-          ou de <strong>Prime Gaming</strong> (ce n’est pas Discord Nitro), connecte-toi
-          <strong>dans le player Twitch</strong> ci-dessous, via l’icône compte.
+        <p class="twitch-callout">
+          Discord Nitro n’enlève pas les pubs Twitch. Il faut Twitch Turbo, un abo chaîne, ou Prime Gaming
+          sur le compte avec lequel tu te connectes.
         </p>
-        <div class="twitch-login-mount" id="twitch-login-mount"></div>
         <ol class="twitch-steps">
-          <li>Clique l’icône compte dans le player, puis connecte-toi.</li>
-          <li>Si rien ne change, ouvre aussi la page de connexion Twitch (popup).</li>
-          <li>Recharge ensuite les lives pour appliquer la session à toute la grille.</li>
+          <li>
+            iPad → Réglages → Safari (ou Réglages → Apps → Safari) → désactiver
+            <strong>Empêcher le suivi intersite</strong>.
+          </li>
+          <li>Ouvre twitch.tv, connecte-toi avec le compte Turbo / abo / Prime.</li>
+          <li>Reviens ici et appuie sur <strong>Recharger les lives</strong>.</li>
+          <li>
+            Si les pubs restent : dans un live, appuie sur <strong>Twitch</strong> pour l’ouvrir
+            en plein site / dans l’app — là, plus de pubs.
+          </li>
         </ol>
+        <div class="twitch-login-mount" id="twitch-login-mount"></div>
         <div class="twitch-dialog-actions">
-          <button type="button" class="btn ghost" id="twitch-login-popup">Ouvrir twitch.tv/login</button>
+          <a class="btn ghost" id="twitch-login-popup" href="https://www.twitch.tv/login" target="_blank" rel="noreferrer">
+            Se connecter sur twitch.tv
+          </a>
           <button type="button" class="btn twitch" id="twitch-login-reload">Recharger les lives</button>
         </div>
       </form>
